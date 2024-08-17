@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>No New Notices</title>
     <style>
       body {
@@ -10,7 +10,6 @@
         background-color: #f4f4f4;
         color: #333;
         margin: 0;
-        padding: 40px 0;
         display: flex;
         justify-content: center;
         align-items: center;
@@ -19,7 +18,6 @@
       }
 
       .container {
-        width: 90%;
         max-width: 600px;
         height: auto;
         display: flex;
@@ -56,13 +54,29 @@
         background-color: #04aa6d;
         color: white;
       }
+      footer {
+        background-color: #333;
+        color: white;
+        text-align: center;
+        padding: 10px 0;
+        position: fixed;
+        bottom: 0;
+        width: 100%;
+        font-size: 14px;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="container">
-        <h1>No New Notices Today</h1>
-        <p>There were no new notices detected today. Please check back later.</p>
-        <a href="{% url 'home' %}">Go to Home</a>
+      <div style="position: fixed; top: 0; left: 0">
+        <a href="{% url 'home' %}" style="margin: 20px">Go to Home</a>
+      </div>
+      <h1>No New Notices Today</h1>
+      <p>There were no new notices detected today. Please check back later.</p>
+      {% comment %} <a href="{% url 'home' %}">Go to Home</a> {% endcomment %}
     </div>
-</body>
+    <footer>
+      <p>This site scrapes the notice from St. Xavier's College website.</p>
+    </footer>
+  </body>
 </html>

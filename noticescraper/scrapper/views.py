@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from .forms import EmailForm
 import logging
 import pymongo
+from bson import ObjectId  # Import ObjectId from bson
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
@@ -23,36 +24,40 @@ notice_collection = db['notices']
 
 def home(request):
     form = EmailForm()
-    message = None
-    
     if request.method == 'POST':
         form = EmailForm(request.POST)
         if form.is_valid():
             email = form.cleaned_data['email']
-            
-            # Initialize MongoDB client and collection
-            client = pymongo.MongoClient("mongodb://localhost:27017/")
-            db = client['mis']
-            email_collection = db['emails']
-            
-            # Check if email already exists
             existing_email = email_collection.find_one({'email': email})
-            
             if existing_email:
-                message = f"Email '{email}' already exists."
+                messages = ["Email already exists."]
             else:
-                # Save email to MongoDB
-                email_collection.update_one(
-                    {'email': email},
-                    {'$set': {'email': email}},
-                    upsert=True
-                )
-                logger.info(f"Email saved to MongoDB: {email}")
-                message = f"Email '{email}' has been successfully added."
+                email_collection.insert_one({'email': email})
+                messages = ["Email added successfully."]
+            return render(request, 'home.html', {'form': form, 'messages': messages, 'emails': get_emails()})
 
-            return render(request, 'home.html', {'form': form, 'message': message})
+    return render(request, 'home.html', {'form': form, 'emails': get_emails()})
 
-    return render(request, 'home.html', {'form': form, 'message': message})
+def edit_email(request, email_id):
+    email = email_collection.find_one({'_id': ObjectId(email_id)})
+    if not email:
+        return redirect('home')
+
+    if request.method == 'POST':
+        new_email = request.POST.get('email')
+        if new_email:
+            email_collection.update_one({'_id': ObjectId(email_id)}, {'$set': {'email': new_email}})
+            return redirect('home')
+
+    return render(request, 'edit_email.html', {'email': email})
+
+def delete_email(request, email_id):
+    email_collection.delete_one({'_id': ObjectId(email_id)})
+    return redirect('home')
+
+def get_emails():
+    emails = email_collection.find()
+    return [{'email': email.get('email'), 'id': str(email.get('_id'))} for email in emails]
 
 def send_email(subject, body, recipients, image_links):
     sender_email = "020bim014@sxc.edu.np"
@@ -134,10 +139,9 @@ def scrape_images(request):
             if emails:
                 send_email(subject, body, emails, image_links)
                 messages = [f"Notice: {notice_title}, Email sent to: {', '.join(emails)}"]
-                return render(request, 'success.html', {'messages': messages, 'images': image_links})
             else:
-                logger.warning("No emails found in the database.")
-                return render(request, 'no_new_notice.html')
+                messages = [f"Notice: {notice_title}, but no emails found in the database."]
+            return render(request, 'success.html', {'messages': messages, 'images': image_links})
         else:
             logger.info("No new notices found.")
             return render(request, 'no_new_notice.html')
