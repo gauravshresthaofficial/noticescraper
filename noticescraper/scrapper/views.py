@@ -14,6 +14,9 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import os
 from dotenv import load_dotenv
+import requests
+from email.mime.base import MIMEBase
+from email import encoders
 
 # Load environment variables from .env file
 load_dotenv()
@@ -64,22 +67,46 @@ def get_emails():
     emails = email_collection.find()
     return [{'email': email.get('email'), 'id': str(email.get('_id'))} for email in emails]
 
+def format_subject(title):
+    # Split the title by hyphens, capitalize each word, and join with spaces
+    words = title.split('-')
+    formatted_title = ' '.join(word.capitalize() for word in words)
+    return formatted_title
+
 def send_email(subject, body, recipients, image_links):
     sender_email = os.getenv('EMAIL')
     sender_password = os.getenv('EMAIL_PASSWORD')
-    print(sender_email, sender_password)
+
+    # Format the subject to capitalize words and separate by spaces
+    formatted_subject = format_subject(subject)
 
     for recipient in recipients:
         msg = MIMEMultipart()
         msg['From'] = sender_email
         msg['To'] = recipient
-        msg['Subject'] = subject
+        msg['Subject'] = formatted_subject
 
         msg.attach(MIMEText(body, 'plain'))
 
-        # Append image links to the email body
-        body += "\n\nImages:\n" + "\n".join(image_links)
-        msg.attach(MIMEText(body, 'plain'))
+        # Download and attach each image
+        for i, img_link in enumerate(image_links):
+            try:
+                response = requests.get(img_link)
+                response.raise_for_status()  # Check if the download was successful
+
+                img_data = response.content
+                img_name = f"image_{i + 1}.jpg"
+
+                # Create a MIMEBase object to attach the image
+                img_part = MIMEBase('application', 'octet-stream')
+                img_part.set_payload(img_data)
+                encoders.encode_base64(img_part)
+                img_part.add_header('Content-Disposition', f'attachment; filename={img_name}')
+
+                # Attach the image to the email
+                msg.attach(img_part)
+            except Exception as e:
+                logger.error(f"Failed to download or attach image from {img_link}: {e}")
 
         try:
             server = smtplib.SMTP('smtp.gmail.com', 587)
@@ -144,7 +171,7 @@ def scrape_images(request):
                 })
                 new_notice_found = True
                 subject = f"New Notice: {notice_title}"
-                body = f"A new notice has been detected: {img_link}"
+                body = f"We found a new notice. View the notice to stay updated with the latest information."
                 image_links.append(img_link)  # Collect image links
 
         driver.quit()
@@ -175,7 +202,7 @@ def view_notices(request):
         
         # Convert MongoDB cursor to a list of dictionaries
         notice_list = [{
-            "title": notice.get("_id"),
+            "title": format_subject(notice.get("_id")),
             "filename": notice.get("filename"),
             "img_link": notice.get("img_link")
         } for notice in notices]

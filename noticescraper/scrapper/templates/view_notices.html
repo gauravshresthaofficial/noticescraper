@@ -72,7 +72,9 @@
       <div class="notice">
         <h2>{{ notice.title }}</h2>
         <img src="{{ notice.img_link }}" alt="{{ notice.filename }}" />
-        {% comment %} <p>Filename: {{ notice.filename }}</p> {% endcomment %}
+        {% comment %}
+        <p>Filename: {{ notice.filename }}</p>
+        {% endcomment %}
       </div>
       {% endfor %} {% else %}
       <p>No notices found.</p>

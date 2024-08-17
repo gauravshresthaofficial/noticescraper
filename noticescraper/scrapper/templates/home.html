@@ -168,7 +168,9 @@
   <body>
     <div class="container">
       <div style="position: fixed; top: 0; right: 0">
-        <a href="{% url 'view_notices' %}" style="margin:20px;">View All Notices</a>
+        <a href="{% url 'view_notices' %}" style="margin: 20px"
+          >View All Notices</a
+        >
       </div>
       <div class="form-container">
         <h1>Welcome to the Notice Scraper</h1>
@@ -187,7 +189,9 @@
         </form>
 
         <form action="{% url 'scrape_images' %}" method="get">
-          <button type="submit">Scrape Notices</button>
+          <div class="form-container">
+            <button type="submit">Scrape Notices</button>
+          </div>
         </form>
       </div>
 
