@@ -145,12 +145,34 @@
         width: 100%;
         font-size: 14px;
       }
+
+      a {
+        color: #04aa6d;
+        text-decoration: none;
+        font-size: 16px;
+        padding: 10px 20px;
+        border-radius: 5px;
+        background-color: #ffffff;
+        border: 1px solid #04aa6d;
+        transition: background-color 0.3s ease, color 0.3s ease;
+        margin-top: 20px;
+        display: inline-block;
+      }
+
+      a:hover {
+        background-color: #04aa6d;
+        color: white;
+      }
     </style>
   </head>
   <body>
     <div class="container">
+      <div style="position: fixed; top: 0; right: 0">
+        <a href="{% url 'view_notices' %}" style="margin:20px;">View All Notices</a>
+      </div>
       <div class="form-container">
         <h1>Welcome to the Notice Scraper</h1>
+        <!-- In home.html -->
 
         {% if message %}
         <p class="message">{{ message }}</p>

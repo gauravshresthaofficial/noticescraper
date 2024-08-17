@@ -13,7 +13,7 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        max-height: 100vh;
+        height: 100vh;
         width: 100%;
       }
 
@@ -33,18 +33,12 @@
       }
 
       h1 {
-        color: #d9534f; /* Red color */
+        color: red;
         margin-bottom: 20px;
       }
 
-      p {
-        margin: 0 0 20px;
-        padding: 10px;
-        font-size: 16px;
-      }
-
       a {
-        color: #04aa6d; /* Green */
+        color: #04aa6d;
         text-decoration: none;
         font-size: 16px;
         padding: 10px 20px;
@@ -52,18 +46,30 @@
         background-color: #ffffff;
         border: 1px solid #04aa6d;
         transition: background-color 0.3s ease, color 0.3s ease;
+        margin-top: 20px;
+        display: inline-block;
       }
 
       a:hover {
         background-color: #04aa6d;
         color: white;
       }
+      footer {
+        background-color: #333;
+        color: white;
+        text-align: center;
+        padding: 10px 0;
+        position: fixed;
+        bottom: 0;
+        width: 100%;
+        font-size: 14px;
+      }
     </style>
   </head>
   <body>
     <div class="container">
       <div style="position: fixed; top: 0; left: 0">
-        <a href="{% url 'home' %}" style="margin: 20px">Go to Home</a>
+        <a href="{% url 'home' %}" style="margin: 20px;">Go to Home</a>
       </div>
       <h1>An error occurred during scraping.</h1>
       <p>Please try again later.</p>

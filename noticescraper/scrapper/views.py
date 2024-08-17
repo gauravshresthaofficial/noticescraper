@@ -167,3 +167,21 @@ def scrape_images(request):
     except Exception as e:
         logger.error(f"Error during scraping: {e}", exc_info=True)
         return render(request, 'error.html')
+
+def view_notices(request):
+    try:
+        # Fetch all notices from the MongoDB collection
+        notices = notice_collection.find()
+        
+        # Convert MongoDB cursor to a list of dictionaries
+        notice_list = [{
+            "title": notice.get("_id"),
+            "filename": notice.get("filename"),
+            "img_link": notice.get("img_link")
+        } for notice in notices]
+        
+        return render(request, 'view_notices.html', {'notices': notice_list})
+    
+    except Exception as e:
+        logger.error(f"Error retrieving notices: {e}", exc_info=True)
+        return render(request, 'error.html')
