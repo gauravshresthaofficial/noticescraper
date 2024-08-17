@@ -1,5 +1,4 @@
 from django.shortcuts import render, redirect
-from .models import Email
 from .forms import EmailForm
 import logging
 import pymongo
@@ -16,15 +15,44 @@ from email.mime.multipart import MIMEMultipart
 # Configure logging
 logger = logging.getLogger(__name__)
 
+# Connect to MongoDB
+client = pymongo.MongoClient("mongodb://localhost:27017/")
+db = client['mis']
+email_collection = db['emails']  # Use 'emails' collection in MongoDB
+notice_collection = db['notices']
+
 def home(request):
     form = EmailForm()
+    message = None
+    
     if request.method == 'POST':
         form = EmailForm(request.POST)
         if form.is_valid():
-            form.save()
-            return redirect('home')
-    
-    return render(request, 'home.html', {'form': form})
+            email = form.cleaned_data['email']
+            
+            # Initialize MongoDB client and collection
+            client = pymongo.MongoClient("mongodb://localhost:27017/")
+            db = client['mis']
+            email_collection = db['emails']
+            
+            # Check if email already exists
+            existing_email = email_collection.find_one({'email': email})
+            
+            if existing_email:
+                message = f"Email '{email}' already exists."
+            else:
+                # Save email to MongoDB
+                email_collection.update_one(
+                    {'email': email},
+                    {'$set': {'email': email}},
+                    upsert=True
+                )
+                logger.info(f"Email saved to MongoDB: {email}")
+                message = f"Email '{email}' has been successfully added."
+
+            return render(request, 'home.html', {'form': form, 'message': message})
+
+    return render(request, 'home.html', {'form': form, 'message': message})
 
 def send_email(subject, body, recipients, image_links):
     sender_email = "020bim014@sxc.edu.np"
@@ -64,21 +92,6 @@ def scrape_images(request):
         chrome_driver_path = 'E:/chromedriver-win64/chromedriver-win64/chromedriver.exe'
         service = Service(chrome_driver_path)
 
-        logger.debug("Initializing MongoDB connection...")
-        client = pymongo.MongoClient("mongodb://localhost:27017/")
-        db = client['mis']
-        collection = db['notices']
-
-        logger.debug("Fetching emails from the database...")
-        email_collection = Email.objects.all()
-        emails = [email.email for email in email_collection]
-
-        if not emails:
-            logger.warning("No emails found in the database.")
-        
-        messages = []
-        image_links = []
-
         logger.debug("Starting the Chrome WebDriver...")
         driver = webdriver.Chrome(service=service, options=chrome_options)
         driver.get(url)
@@ -90,6 +103,7 @@ def scrape_images(request):
 
         divs = driver.find_elements(By.CSS_SELECTOR, '.fixed-image.cover.fixed-image-holder')
         new_notice_found = False
+        image_links = []
 
         for div in divs:
             img_tag = div.find_element(By.TAG_NAME, 'img')
@@ -97,9 +111,9 @@ def scrape_images(request):
             img_key = img_link.split('/')[-1]
             notice_title = div.find_element(By.XPATH, '..').get_attribute('href').split('/')[-1]
 
-            if not collection.find_one({"_id": notice_title}):
+            if not notice_collection.find_one({"_id": notice_title}):
                 logger.debug(f"New notice found: {notice_title}. Saving to database...")
-                collection.insert_one({
+                notice_collection.insert_one({
                     "_id": notice_title,
                     "filename": img_key,
                     "img_link": img_link
@@ -109,18 +123,24 @@ def scrape_images(request):
                 subject = f"New Notice: {notice_title}"
                 body = f"A new notice has been detected: {img_link}"
                 image_links.append(img_link)  # Collect image links
-                # send_email(subject, body, emails, image_links)
-
-                messages.append(f"Notice: {notice_title}, Email sent to: {', '.join(emails)}")
 
         driver.quit()
 
-        if not new_notice_found:
+        if new_notice_found:
+            logger.info("Scraping completed successfully.")
+            # Fetch all emails from MongoDB
+            email_docs = email_collection.find()
+            emails = [email_doc['email'] for email_doc in email_docs]
+            if emails:
+                send_email(subject, body, emails, image_links)
+                messages = [f"Notice: {notice_title}, Email sent to: {', '.join(emails)}"]
+                return render(request, 'success.html', {'messages': messages, 'images': image_links})
+            else:
+                logger.warning("No emails found in the database.")
+                return render(request, 'no_new_notice.html')
+        else:
             logger.info("No new notices found.")
             return render(request, 'no_new_notice.html')
-
-        logger.info("Scraping completed successfully.")
-        return render(request, 'success.html', {'messages': messages, 'images': image_links})
 
     except Exception as e:
         logger.error(f"Error during scraping: {e}", exc_info=True)

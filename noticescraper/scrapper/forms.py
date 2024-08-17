@@ -1,7 +1,5 @@
+# scrapper/forms.py
 from django import forms
-from .models import Email
 
-class EmailForm(forms.ModelForm):
-    class Meta:
-        model = Email
-        fields = ['email']
+class EmailForm(forms.Form):
+    email = forms.EmailField(label='Email Address', required=True)
