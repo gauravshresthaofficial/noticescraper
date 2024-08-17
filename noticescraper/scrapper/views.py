@@ -12,6 +12,11 @@ from selenium.webdriver.support import expected_conditions as EC
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -60,8 +65,9 @@ def get_emails():
     return [{'email': email.get('email'), 'id': str(email.get('_id'))} for email in emails]
 
 def send_email(subject, body, recipients, image_links):
-    sender_email = "020bim014@sxc.edu.np"
-    sender_password = "xaveriangaurav"
+    sender_email = os.getenv('EMAIL')
+    sender_password = os.getenv('EMAIL_PASSWORD')
+    print(sender_email, sender_password)
 
     for recipient in recipients:
         msg = MIMEMultipart()
@@ -116,14 +122,26 @@ def scrape_images(request):
             img_key = img_link.split('/')[-1]
             notice_title = div.find_element(By.XPATH, '..').get_attribute('href').split('/')[-1]
 
-            if not notice_collection.find_one({"_id": notice_title}):
+            # Check if the notice already exists in the database
+            existing_notice = notice_collection.find_one({"_id": notice_title})
+            if existing_notice:
+                # Update the notice if it exists
+                logger.debug(f"Notice already exists: {notice_title}. Updating the database...")
+                notice_collection.update_one(
+                    {"_id": notice_title},
+                    {"$set": {
+                        "filename": img_key,
+                        "img_link": img_link
+                    }}
+                )
+            else:
+                # Insert the new notice if it doesn't exist
                 logger.debug(f"New notice found: {notice_title}. Saving to database...")
                 notice_collection.insert_one({
                     "_id": notice_title,
                     "filename": img_key,
                     "img_link": img_link
                 })
-
                 new_notice_found = True
                 subject = f"New Notice: {notice_title}"
                 body = f"A new notice has been detected: {img_link}"
