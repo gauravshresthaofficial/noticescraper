@@ -1,9 +1,7 @@
-# noticescraper/urls.py
-
 from django.contrib import admin
-from django.urls import include, path
+from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('scrapper/', include('scrapper.urls')),  # Ensure 'scraper' is the correct app name
+    path('', include('scrapper.urls')),
 ]

@@ -1,8 +1,7 @@
-# scraper/urls.py
-
 from django.urls import path
-from .views import scrape_images  # Adjust the import based on your view function name
+from .views import home, scrape_images
 
 urlpatterns = [
-    path('scrape-images/', scrape_images, name='scrape_images'),
+    path('', home, name='home'),
+    path('scrape/', scrape_images, name='scrape_images'),
 ]
