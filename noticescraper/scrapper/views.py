@@ -25,7 +25,7 @@ load_dotenv()
 logger = logging.getLogger(__name__)
 
 # Connect to MongoDB
-client = pymongo.MongoClient("mongodb://localhost:27017/")
+client = pymongo.MongoClient(os.getenv('MONGO_URI'))
 db = client['mis']
 email_collection = db['emails']  # Use 'emails' collection in MongoDB
 notice_collection = db['notices']
@@ -127,7 +127,7 @@ def scrape_images(request):
         url = "https://sxc.edu.np/notice"
         chrome_options = Options()
         chrome_options.add_argument("--headless")
-        chrome_driver_path = 'E:/chromedriver-win64/chromedriver-win64/chromedriver.exe'
+        chrome_driver_path = os.getenv('DRIVER_LOCATION')
         service = Service(chrome_driver_path)
 
         logger.debug("Starting the Chrome WebDriver...")
